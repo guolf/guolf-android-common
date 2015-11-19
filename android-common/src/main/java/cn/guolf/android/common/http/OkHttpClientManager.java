@@ -131,9 +131,6 @@ public class OkHttpClientManager {
         return getInstance()._getHttpsDelegate();
     }
 
-    /**
-     * ============Get方便的访问方式============
-     */
 
     public static void getAsyn(String url, ResultCallback callback) {
         getInstance().getGetDelegate().getAsyn(url, callback, null);
@@ -143,9 +140,7 @@ public class OkHttpClientManager {
         getInstance().getGetDelegate().getAsyn(url, callback, tag);
     }
 
-    /**
-     * ============POST方便的访问方式===============
-     */
+
     public static void postAsyn(String url, Param[] params, final ResultCallback callback) {
         getInstance().getPostDelegate().postAsyn(url, params, callback, null);
     }
@@ -190,8 +185,6 @@ public class OkHttpClientManager {
         return mHttpsDelegate;
     }
 
-
-    //=============便利的访问方式结束===============
 
     private DownloadDelegate _getDownloadDelegate() {
         return mDownloadDelegate;
@@ -370,7 +363,6 @@ public class OkHttpClientManager {
         }
     }
 
-    //====================ImageUtils=======================
     public static class ImageUtils {
         /**
          * 根据InputStream获取图片实际的宽度和高度
@@ -544,6 +536,12 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Post请求
+         *
+         * @param url
+         * @param params
+         * @param tag
+         * @return
+         * @throws IOException
          */
         public Response post(String url, Param[] params, Object tag) throws IOException {
             Request request = buildPostFormRequest(url, params, tag);
@@ -557,6 +555,12 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Post请求
+         *
+         * @param url
+         * @param params
+         * @param tag
+         * @return
+         * @throws IOException
          */
         public String postAsString(String url, Param[] params, Object tag) throws IOException {
             Response response = post(url, params, tag);
@@ -578,6 +582,11 @@ public class OkHttpClientManager {
 
         /**
          * 异步的post请求
+         *
+         * @param url
+         * @param params
+         * @param callback
+         * @param tag
          */
         public void postAsyn(String url, Param[] params, final ResultCallback callback, Object tag) {
             Request request = buildPostFormRequest(url, params, tag);
@@ -586,6 +595,11 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Post请求:直接将bodyStr以写入请求体
+         *
+         * @param url
+         * @param bodyStr
+         * @return
+         * @throws IOException
          */
         public Response post(String url, String bodyStr) throws IOException {
             return post(url, bodyStr, null);
@@ -600,6 +614,11 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Post请求:直接将bodyFile以写入请求体
+         *
+         * @param url
+         * @param bodyFile
+         * @return
+         * @throws IOException
          */
         public Response post(String url, File bodyFile) throws IOException {
             return post(url, bodyFile, null);
@@ -614,6 +633,11 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Post请求
+         *
+         * @param url
+         * @param bodyBytes
+         * @return
+         * @throws IOException
          */
         public Response post(String url, byte[] bodyBytes) throws IOException {
             return post(url, bodyBytes, null);
@@ -628,6 +652,10 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyStr以写入请求体
+         *
+         * @param url
+         * @param bodyStr
+         * @param callback
          */
         public void postAsyn(String url, String bodyStr, final ResultCallback callback) {
             postAsyn(url, bodyStr, callback, null);
@@ -639,6 +667,10 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyBytes以写入请求体
+         *
+         * @param url
+         * @param bodyBytes
+         * @param callback
          */
         public void postAsyn(String url, byte[] bodyBytes, final ResultCallback callback) {
             postAsyn(url, bodyBytes, callback, null);
@@ -650,6 +682,10 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyFile以写入请求体
+         *
+         * @param url
+         * @param bodyFile
+         * @param callback
          */
         public void postAsyn(String url, File bodyFile, final ResultCallback callback) {
             postAsyn(url, bodyFile, callback, null);
@@ -661,6 +697,12 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyStr以写入请求体
+         *
+         * @param url
+         * @param bodyStr
+         * @param type
+         * @param callback
+         * @param tag
          */
         public void postAsynWithMediaType(String url, String bodyStr, MediaType type, final ResultCallback callback, Object tag) {
             RequestBody body = RequestBody.create(type, bodyStr);
@@ -670,6 +712,12 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyBytes以写入请求体
+         *
+         * @param url
+         * @param bodyBytes
+         * @param type
+         * @param callback
+         * @param tag
          */
         public void postAsynWithMediaType(String url, byte[] bodyBytes, MediaType type, final ResultCallback callback, Object tag) {
             RequestBody body = RequestBody.create(type, bodyBytes);
@@ -679,6 +727,12 @@ public class OkHttpClientManager {
 
         /**
          * 直接将bodyFile以写入请求体
+         *
+         * @param url
+         * @param bodyFile
+         * @param type
+         * @param callback
+         * @param tag
          */
         public void postAsynWithMediaType(String url, File bodyFile, MediaType type, final ResultCallback callback, Object tag) {
             RequestBody body = RequestBody.create(type, bodyFile);
@@ -692,6 +746,7 @@ public class OkHttpClientManager {
          *
          * @param url
          * @param body
+         * @param tag
          * @return
          */
         private Request buildPostRequest(String url, RequestBody body, Object tag) {
@@ -726,7 +781,11 @@ public class OkHttpClientManager {
         }
 
         /**
-         * 通用的方法
+         * 通用get方法
+         *
+         * @param request
+         * @return
+         * @throws IOException
          */
         public Response get(Request request) throws IOException {
             Call call = mOkHttpClient.newCall(request);
@@ -736,6 +795,10 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Get请求
+         *
+         * @param url
+         * @return
+         * @throws IOException
          */
         public Response get(String url) throws IOException {
             return get(url, null);
@@ -749,6 +812,10 @@ public class OkHttpClientManager {
 
         /**
          * 同步的Get请求
+         *
+         * @param url
+         * @return
+         * @throws IOException
          */
         public String getAsString(String url) throws IOException {
             return getAsString(url, null);
@@ -761,6 +828,9 @@ public class OkHttpClientManager {
 
         /**
          * 通用的方法
+         *
+         * @param request
+         * @param callback
          */
         public void getAsyn(Request request, ResultCallback callback) {
             deliveryResult(callback, request);
@@ -768,6 +838,9 @@ public class OkHttpClientManager {
 
         /**
          * 异步的get请求
+         *
+         * @param url
+         * @param callback
          */
         public void getAsyn(String url, final ResultCallback callback) {
             getAsyn(url, callback, null);
@@ -787,6 +860,13 @@ public class OkHttpClientManager {
     public class UploadDelegate {
         /**
          * 同步基于post的文件上传:上传单个文件
+         *
+         * @param url
+         * @param fileKey
+         * @param file
+         * @param tag
+         * @return
+         * @throws IOException
          */
         public Response post(String url, String fileKey, File file, Object tag) throws IOException {
             return post(url, new String[]{fileKey}, new File[]{file}, null, tag);
@@ -794,6 +874,14 @@ public class OkHttpClientManager {
 
         /**
          * 同步基于post的文件上传:上传多个文件以及携带key-value对：主方法
+         *
+         * @param url
+         * @param fileKeys
+         * @param files
+         * @param params
+         * @param tag
+         * @return
+         * @throws IOException
          */
         public Response post(String url, String[] fileKeys, File[] files, Param[] params, Object tag) throws IOException {
             Request request = buildMultipartFormRequest(url, files, fileKeys, params, tag);
@@ -802,6 +890,14 @@ public class OkHttpClientManager {
 
         /**
          * 同步单文件上传
+         *
+         * @param url
+         * @param fileKey
+         * @param file
+         * @param params
+         * @param tag
+         * @return
+         * @throws IOException
          */
         public Response post(String url, String fileKey, File file, Param[] params, Object tag) throws IOException {
             return post(url, new String[]{fileKey}, new File[]{file}, params, tag);
@@ -809,6 +905,13 @@ public class OkHttpClientManager {
 
         /**
          * 异步基于post的文件上传:主方法
+         *
+         * @param url
+         * @param fileKeys
+         * @param files
+         * @param params
+         * @param callback
+         * @param tag
          */
         public void postAsyn(String url, String[] fileKeys, File[] files, Param[] params, ResultCallback callback, Object tag) {
             Request request = buildMultipartFormRequest(url, files, fileKeys, params, tag);
@@ -817,6 +920,13 @@ public class OkHttpClientManager {
 
         /**
          * 异步基于post的文件上传:单文件不带参数上传
+         *
+         * @param url
+         * @param fileKey
+         * @param file
+         * @param callback
+         * @param tag
+         * @throws IOException
          */
         public void postAsyn(String url, String fileKey, File file, ResultCallback callback, Object tag) throws IOException {
             postAsyn(url, new String[]{fileKey}, new File[]{file}, null, callback, tag);
@@ -824,6 +934,13 @@ public class OkHttpClientManager {
 
         /**
          * 异步基于post的文件上传，单文件且携带其他form参数上传
+         *
+         * @param url
+         * @param fileKey
+         * @param file
+         * @param params
+         * @param callback
+         * @param tag
          */
         public void postAsyn(String url, String fileKey, File file, Param[] params, ResultCallback callback, Object tag) {
             postAsyn(url, new String[]{fileKey}, new File[]{file}, params, callback, tag);
@@ -872,6 +989,11 @@ public class OkHttpClientManager {
     public class DisplayImageDelegate {
         /**
          * 加载图片
+         *
+         * @param view
+         * @param url
+         * @param errorResId
+         * @param tag
          */
         public void displayImage(final ImageView view, final String url, final int errorResId, final Object tag) {
             final Request request = new Request.Builder()
@@ -954,8 +1076,9 @@ public class OkHttpClientManager {
          * 异步下载文件
          *
          * @param url
-         * @param destFileDir 目标文件
+         * @param destFileDir
          * @param callback
+         * @param tag
          */
         public void downloadAsyn(final String url, final String destFileDir, final ResultCallback callback, Object tag) {
             final Request request = new Request.Builder()

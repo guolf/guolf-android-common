@@ -89,38 +89,30 @@ public class UpdateHelper {
      * @param url
      */
     public void check(String url) {
+        OkHttpClientManager.getAsyn(url, new OkHttpClientManager.ResultCallback() {
+            @Override
+            public void onError(Request request, String error) {
+                mUpdateListener.onCheckFinish();
+                LogUtils.e(error);
+            }
 
-        UpdateInfoBean infoBean = new UpdateInfoBean();
-        infoBean.setDownUrl("http://dldir1.qq.com/qqfile/QQIntl/QQi_wireless/Android/qqi_5.0.10.6046_android_office.apk");
-        infoBean.setVersionCode("1");
-        infoBean.setVersionName("v1.0");
-        infoBean.setWhatsNew("this is a test");
-        showDialog(infoBean);
+            @Override
+            public void onResponse(Object response) {
+                UpdateInfoBean infoBean = mParser.parse(response.toString());
+                if (infoBean != null
+                        && infoBean.getVersionCode() > mPackageHelper.getLocalVersionCode()) {
+                    showDialog(infoBean);
+                } else {
+                    mUpdateListener.onCheckFinish();
+                }
+            }
 
-//        OkHttpClientManager.getAsyn(url, new OkHttpClientManager.ResultCallback() {
-//            @Override
-//            public void onError(Request request, Exception e) {
-//                mUpdateListener.onCheckFinish();
-//                LogUtils.e(e);
-//            }
-//
-//            @Override
-//            public void onResponse(Object response) {
-//                UpdateInfoBean infoBean = mParser.parse(response.toString());
-//                if (infoBean != null
-//                        && infoBean.getVersionCode() > mPackageHelper.getLocalVersionCode()) {
-//                    showDialog(infoBean);
-//                } else {
-//                    mUpdateListener.onCheckFinish();
-//                }
-//            }
-//
-//            @Override
-//            public void onBefore(Request request) {
-//                super.onBefore(request);
-//                mUpdateListener.onCheckStart();
-//            }
-//        });
+            @Override
+            public void onBefore(Request request) {
+                super.onBefore(request);
+                mUpdateListener.onCheckStart();
+            }
+        });
     }
 
     private void showDialog(final UpdateInfoBean bean) {
@@ -228,8 +220,8 @@ public class UpdateHelper {
         String fileName = mActivity.getPackageName() + "-" + bean.getVersionCode() + ".apk";
         String filePath = Environment.getExternalStorageDirectory() + File.separator + fileName;
         File file = new File(filePath);
-        if (file.exists()) {// 存在旧文件
-            file.delete();// 删除旧文件
+        if (file.exists()) {
+            file.delete();
         }
         return filePath;
     }

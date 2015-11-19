@@ -1,10 +1,15 @@
 package cn.guolf.android.common.exception;
 
 import android.content.Context;
+import android.os.Build;
+import android.os.Environment;
 import android.os.Looper;
 import android.widget.Toast;
 
-import cn.guolf.android.common.app.ApplicationBase;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Date;
+
 import cn.guolf.android.common.util.log.LogUtils;
 
 /**
@@ -13,7 +18,6 @@ import cn.guolf.android.common.util.log.LogUtils;
  */
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
-    public static final boolean DEBUG = ApplicationBase.mApp.isDebuger;
     private static CrashHandler INSTANCE;
     private Context mContext;
     private Thread.UncaughtExceptionHandler mDefaultHandler;
@@ -34,11 +38,12 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
             mDefaultHandler.uncaughtException(thread, ex);
         } else {
             try {
-                Thread.sleep(2000);
+                Thread.sleep(3000);
             } catch (Exception ex2) {
 
             } finally {
-                // Process.killProcess(Process.myPid());
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(10);
             }
         }
     }
@@ -48,7 +53,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
      *
      * @param ex
      */
-    private boolean handleException(Throwable ex) {
+    private boolean handleException(final Throwable ex) {
         if (ex == null) {
             return false;
         }
@@ -58,9 +63,31 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
             @Override
             public void run() {
                 Looper.prepare();
-                Toast.makeText(mContext, "抱歉，程序出异常了", Toast.LENGTH_LONG)
-                        .show();
+                Toast.makeText(mContext, "程序出现异常,即将关闭该页面,请联系我们,我们会尽快处理,给你带来的不便请原谅!", Toast.LENGTH_LONG).show();
+                save();
                 Looper.loop();
+            }
+
+            private void save() {
+                String fileName = "crash-" + new Date().getTime() + ".txt";
+                File file = new File(Environment.getExternalStorageDirectory()
+                        + "/log");
+                if (!file.exists()) {
+                    file.mkdirs();
+                }
+                File file1 = new File(file, fileName);
+                try {
+                    FileOutputStream fos = new FileOutputStream(file1, true);
+                    fos.write(getPhoneInfo().getBytes());
+                    fos.write(msg.getBytes());
+                    for (int i = 0; i < ex.getStackTrace().length; i++) {
+                        fos.write(ex.getStackTrace()[i].toString().getBytes());
+                    }
+
+                    fos.flush();
+                    fos.close();
+                } catch (Exception e) {
+                }
             }
 
         }.start();
@@ -72,5 +99,31 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         mContext = ctx;
         mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(this);
+    }
+
+    public String getPhoneInfo() {
+        StringBuilder result = new StringBuilder();
+
+        result.append("BOARD=").append(Build.BOARD).append('\n');
+        result.append("BRAND=").append(Build.BRAND).append('\n');
+        result.append("CPU_ABI=").append(Build.CPU_ABI).append('\n');
+        result.append("DEVICE=").append(Build.DEVICE).append('\n');
+        result.append("DISPLAY=").append(Build.DISPLAY).append('\n');
+        result.append("FINGERPRINT=").append(Build.FINGERPRINT).append('\n');
+        result.append("HOST=").append(Build.HOST).append('\n');
+        result.append("ID=").append(Build.ID).append('\n');
+        result.append("MANUFACTURER=").append(Build.MANUFACTURER).append('\n');
+        result.append("MODEL=").append(Build.MODEL).append('\n');
+        result.append("PRODUCT=").append(Build.PRODUCT).append('\n');
+        result.append("TAGS=").append(Build.TAGS).append('\n');
+        result.append("TIME=").append(Build.TIME).append('\n');
+        result.append("TYPE=").append(Build.TYPE).append('\n');
+        result.append("USER=").append(Build.USER).append('\n');
+        result.append("VERSION.CODENAME=").append(Build.VERSION.CODENAME).append('\n');
+        result.append("VERSION.INCREMENTAL=").append(Build.VERSION.INCREMENTAL).append('\n');
+        result.append("VERSION.RELEASE=").append(Build.VERSION.RELEASE).append('\n');
+        result.append("VERSION.SDK_INT=").append(Build.VERSION.SDK_INT).append('\n');
+
+        return result.toString();
     }
 }

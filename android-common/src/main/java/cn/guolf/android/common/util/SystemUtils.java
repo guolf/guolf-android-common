@@ -23,8 +23,9 @@ public class SystemUtils {
     /**
      * 将对象转化为String
      *
-     * @param object
-     * @return
+     * @param object 对象
+     * @param <T>
+     * @return string字符串
      */
     public static <T> String objectToString(T object) {
         if (object == null) {
