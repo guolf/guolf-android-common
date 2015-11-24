@@ -9,9 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-import com.google.gson.internal.$Gson$Types;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -79,7 +76,6 @@ public class OkHttpClientManager {
     };
     private OkHttpClient mOkHttpClient;
     private Handler mDelivery;
-    private Gson mGson;
     private HttpsDelegate mHttpsDelegate = new HttpsDelegate();
     private DownloadDelegate mDownloadDelegate = new DownloadDelegate();
     private DisplayImageDelegate mDisplayImageDelegate = new DisplayImageDelegate();
@@ -92,7 +88,6 @@ public class OkHttpClientManager {
         //cookie enabled
         mOkHttpClient.setCookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER));
         mDelivery = new Handler(Looper.getMainLooper());
-        mGson = new Gson();
 
         /*just for test !!!*/
         mOkHttpClient.setHostnameVerifier(new HostnameVerifier() {
@@ -240,19 +235,10 @@ public class OkHttpClientManager {
             public void onResponse(final Response response) {
                 try {
                     final String string = response.body().string();
-                    if (resCallBack.mType == String.class) {
-                        sendSuccessResultCallback(string, resCallBack);
-                    } else {
-                        Object o = mGson.fromJson(string, resCallBack.mType);
-                        sendSuccessResultCallback(o, resCallBack);
-                    }
+                    sendSuccessResultCallback(string, resCallBack);
                 } catch (IOException e) {
                     sendFailedStringCallback(response.request(), "IO异常:" + e.getMessage(), resCallBack);
-                } catch (JsonParseException e)//Json解析的错误
-                {
-                    sendFailedStringCallback(response.request(), "json解析异常:" + e.getMessage(), resCallBack);
                 }
-
             }
         });
     }
@@ -321,19 +307,8 @@ public class OkHttpClientManager {
     }
 
     public static abstract class ResultCallback<T> {
-        Type mType;
 
         public ResultCallback() {
-            mType = getSuperclassTypeParameter(getClass());
-        }
-
-        static Type getSuperclassTypeParameter(Class<?> subclass) {
-            Type superclass = subclass.getGenericSuperclass();
-            if (superclass instanceof Class) {
-                throw new RuntimeException("Missing type parameter.");
-            }
-            ParameterizedType parameterized = (ParameterizedType) superclass;
-            return $Gson$Types.canonicalize(parameterized.getActualTypeArguments()[0]);
         }
 
         public void onBefore(Request request) {

@@ -19,9 +19,37 @@ import cn.guolf.android.common.R;
 import cn.guolf.android.common.http.OkHttpClientManager;
 import cn.guolf.android.common.util.log.LogUtils;
 
+/**
+ * 应用更新工具类
+ * json格式："{\"msg\":\"1、新增XXXX功能\\r\\n2、修复XXXBUG\",\"version_name\":\"5\",\"version_code\":\"5\",\"flag\":true,\"apkUrl\":\"http://10.10.1.1/apk/test.apk\"}";
+ * example：
+ <code>
+     AbsUpdateInfoParser parser = new AbsUpdateInfoParser() {
+        @Override
+        public UpdateInfoBean parse(String info) {
+
+            UpdateInfoBean bean = new UpdateInfoBean();
+            try {
+                JSONObject json = new JSONObject(info);
+                bean.setFlag(json.getBoolean("flag"));
+                bean.setVersionName(json.getString("version_name"));
+                bean.setVersionCode(json.getString("version_code"));
+                bean.setDownUrl(json.getString("apkUrl"));
+                bean.setWhatsNew(json.getString("msg"));
+                return bean;
+            }catch (JSONException ex){
+                LogUtils.i(ex);
+            }
+            return null;
+        }
+     };
+     UpdateHelper helper = new UpdateHelper(UpdateDemoActivity.this,parser,new UpdateListener(UpdateDemoActivity.this){});
+     helper.check("http://10.10.1.1/apk/version.json");
+ </code>
+ *
+ */
 public class UpdateHelper {
 
-    private final String TAG = UpdateHelper.class.getSimpleName();
     private Activity mActivity;
     private PackageHelper mPackageHelper;
     private AbsUpdateInfoParser mParser;
@@ -31,41 +59,7 @@ public class UpdateHelper {
 
     private UpdateListener mUpdateListener;
 
-    /**
-     * 强制更新
-     *
-     * @param activity
-     * @param parser
-     * @param listener
-     */
-    public UpdateHelper(Activity activity, AbsUpdateInfoParser parser,
-                        UpdateListener.ForceUpdateListener listener) {
-        if (activity == null) {
-            throw new InvalidParameterException("Param Activity can not be null");
-        }
-        if (parser == null) {
-            throw new InvalidParameterException("Param AbsUpdateInfoParser can not be null");
-        }
-        if (listener == null) {
-            throw new InvalidParameterException("Param UpdateListener can not be null");
-        }
-
-        mParser = parser;
-        mActivity = activity;
-        mUpdateListener = listener;
-        mPackageHelper = new PackageHelper(activity);
-        mNotificationHelper = new NotificationHelper(activity, mPackageHelper);
-    }
-
-    /**
-     * 普通更新
-     *
-     * @param activity
-     * @param parser
-     * @param listener
-     */
-    public UpdateHelper(Activity activity, AbsUpdateInfoParser parser,
-                        UpdateListener.NormalUpdateListener listener) {
+    public UpdateHelper(Activity activity, AbsUpdateInfoParser parser, UpdateListener listener) {
         if (activity == null) {
             throw new InvalidParameterException("Param Activity can not be null");
         }
@@ -137,17 +131,9 @@ public class UpdateHelper {
         DialogInterface.OnClickListener negativeBtnLsnr = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if (mUpdateListener instanceof UpdateListener.ForceUpdateListener) {
-                    ((UpdateListener.ForceUpdateListener) mUpdateListener).onDecline();
-                }
-            }
-        };
-        DialogInterface.OnClickListener neutralBtnLsnr = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (mUpdateListener instanceof UpdateListener.NormalUpdateListener) {
-                    ((UpdateListener.NormalUpdateListener) mUpdateListener).onCancel();
-                }
+
+                mUpdateListener.onUpdateClick(bean);
+
             }
         };
 
@@ -156,12 +142,7 @@ public class UpdateHelper {
         builder.setTitle("发现新版本");
         builder.setMessage("是否下载?\n\n最新版本:" + bean.getVersionName() + "\n当前版本:" + mPackageHelper.getLocalVersionName() + "\n更新内容:" + bean.getWhatsNew());
         builder.setPositiveButton("下载", positiveBtnLsnr);
-        if (mUpdateListener instanceof UpdateListener.ForceUpdateListener) {
-            builder.setNegativeButton("退出", negativeBtnLsnr);
-        } else if (mUpdateListener instanceof UpdateListener.NormalUpdateListener) {
-            //builder.setNeutralButton("下次再说", neutralBtnLsnr);
-            builder.setNegativeButton("下次再说", neutralBtnLsnr);
-        }
+        builder.setNegativeButton("下次再说", negativeBtnLsnr);
         builder.setCancelable(false);
         builder.create();
         builder.show();

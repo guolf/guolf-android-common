@@ -35,6 +35,23 @@ public class AlertInfoTool extends Activity {
         builder.create().show();
     }
 
+    public static void alert(Context context, String title, String msg,
+                               final AlertInfoToolOper alertInfoToolOper) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setMessage(msg);
+        builder.setTitle(title);
+        builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                if (alertInfoToolOper != null) {
+                    alertInfoToolOper.operate();
+                }
+            }
+        });
+        builder.create().show();
+    }
+
     public interface AlertInfoToolOper {
         void operate();
     }

@@ -8,6 +8,8 @@ public class UpdateInfoBean {
     private String versionCode = "0";
     private String versionName = "", whatsNew = "", downUrl = "";
 
+    // 强制更新标识，默认false
+    private boolean flag = false;
 
     /**
      * @return 如果versionCode非法, 返回0
@@ -48,5 +50,13 @@ public class UpdateInfoBean {
 
     public void setDownUrl(String downUrl) {
         this.downUrl = downUrl;
+    }
+
+    public boolean isFlag() {
+        return flag;
+    }
+
+    public void setFlag(boolean flag) {
+        this.flag = flag;
     }
 }

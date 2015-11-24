@@ -1,51 +1,64 @@
 package cn.guolf.android.common.updatehelper;
 
+import android.app.Activity;
+import android.widget.Toast;
+
+import cn.guolf.android.common.util.AlertInfoTool;
+import cn.guolf.android.common.util.log.LogUtils;
+
 /**
  * Author：guolf on 9/19/15 16:19
  * Email ：guo@guolingfa.cn
  */
-public interface UpdateListener {
+public abstract class UpdateListener {
+
+    private Activity mActiviy;
+
+    public UpdateListener(Activity act) {
+        this.mActiviy = act;
+    }
+
     /**
      * 可以在这提示用户正在检查更新
      */
-    public void onCheckStart();
+    public void onCheckStart() {
+
+    }
 
     /**
      * 如果用户选择下载更新,这个方法会被调用
      */
-    public void onDownloadStart();
+    public void onDownloadStart() {
+
+    }
 
     /**
      * 检查完成(没有可用更新,或者检查更新中途出现异常)
      * 例如你是在程序Loading界面进行检查更新,那么现在可以跳过Loading进入程序首页了
      */
-    public void onCheckFinish();
+    public void onCheckFinish() {
 
-    /**
-     * 强制更新结果监听器
-     *
-     * @author Fantouch
-     */
-    public static interface ForceUpdateListener extends UpdateListener {
-        /**
-         * 用户明确拒绝更新<br>
-         * 应该在这里执行退出程序的操作,否则就不叫强制更新了.<br>
-         * 目前Android没有提供退出程序的方法,而非官方方法各有不足,适应性不强,这里不方便集成,请自行实现
-         */
-        public void onDecline();
     }
 
     /**
-     * 自愿更新结果监听器
-     *
-     * @author Fantouch
+     * 更新出错
      */
-    public static interface NormalUpdateListener extends UpdateListener {
+    public void onUpdateError(Exception ex) {
+        LogUtils.e("更新出错：" + ex.getMessage());
+        Toast.makeText(mActiviy.getApplicationContext(), "更新出错：" + ex.getMessage(), Toast.LENGTH_SHORT).show();
+    }
 
-        /**
-         * 用户取消本次更新(选择了"下次再说")
-         * 例如你是在程序Loading界面进行检查更新,那么现在可以跳过Loading进入程序首页了
-         */
-        public void onCancel();
+    /**
+     * 更新事件监听
+     */
+    public void onUpdateClick(UpdateInfoBean bean) {
+        if (bean.isFlag()) {
+            AlertInfoTool.alert(mActiviy, "升级提醒", "为了更好的体验，请升级APP", new AlertInfoTool.AlertInfoToolOper() {
+                @Override
+                public void operate() {
+                    mActiviy.finish();
+                }
+            });
+        }
     }
 }
