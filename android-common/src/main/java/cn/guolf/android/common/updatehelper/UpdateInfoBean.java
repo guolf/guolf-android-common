@@ -5,26 +5,17 @@ package cn.guolf.android.common.updatehelper;
  * Email ：guo@guolingfa.cn
  */
 public class UpdateInfoBean {
-    private String versionCode = "0";
-    private String versionName = "", whatsNew = "", downUrl = "";
+    private int versionCode;
+    private String versionName, whatsNew, sha1, downUrl;
 
     // 强制更新标识，默认false
     private boolean flag = false;
 
-    /**
-     * @return 如果versionCode非法, 返回0
-     */
     public int getVersionCode() {
-        int code = 0;
-        try {
-            code = Integer.valueOf(versionCode);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return code;
+        return versionCode;
     }
 
-    public void setVersionCode(String versionCode) {
+    public void setVersionCode(int versionCode) {
         this.versionCode = versionCode;
     }
 
@@ -44,12 +35,12 @@ public class UpdateInfoBean {
         this.whatsNew = whatsNew;
     }
 
-    public String getDownUrl() {
-        return downUrl;
+    public String getSha1() {
+        return sha1;
     }
 
-    public void setDownUrl(String downUrl) {
-        this.downUrl = downUrl;
+    public void setSha1(String sha1) {
+        this.sha1 = sha1;
     }
 
     public boolean isFlag() {
@@ -58,5 +49,13 @@ public class UpdateInfoBean {
 
     public void setFlag(boolean flag) {
         this.flag = flag;
+    }
+
+    public String getDownUrl() {
+        return downUrl;
+    }
+
+    public void setDownUrl(String downUrl) {
+        this.downUrl = downUrl;
     }
 }

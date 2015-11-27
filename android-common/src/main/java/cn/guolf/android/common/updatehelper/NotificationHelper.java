@@ -12,18 +12,17 @@ import android.widget.Toast;
 import java.io.File;
 
 import cn.guolf.android.common.R;
+import cn.guolf.android.common.util.AppUtils;
 
 public class NotificationHelper {
 
     private Context mContext;
     private RemoteViews mRemoteViews;
     private Notification mDownProgrNotif;
-    private PackageHelper mPackageHelper;
     private NotificationManager mContextNotificationManager;
 
-    public NotificationHelper(Context ctx, PackageHelper packageHelper) {
+    public NotificationHelper(Context ctx) {
         mContext = ctx;
-        mPackageHelper = packageHelper;
         mContextNotificationManager = (NotificationManager) ctx
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         initDownProgrNotif();
@@ -34,10 +33,9 @@ public class NotificationHelper {
         mDownProgrNotif.icon = android.R.drawable.stat_sys_download;
         mDownProgrNotif.flags |= Notification.FLAG_AUTO_CANCEL;
 
-        mRemoteViews = new RemoteViews(mPackageHelper.getPackageName(),
+        mRemoteViews = new RemoteViews(mContext.getString(R.string.app_name),
                 R.layout.updatehelper_notification_progress);
-        mRemoteViews.setImageViewResource(R.id.updatehelper_notification_progress_icon,
-                mPackageHelper.getAppIcon());
+        mRemoteViews.setImageViewResource(R.id.updatehelper_notification_progress_icon, AppUtils.getAppIcon(mContext));
 
         mDownProgrNotif.contentView = mRemoteViews;
         mDownProgrNotif.contentIntent = PendingIntent.getService(mContext, 0, new Intent(), 0);
@@ -51,7 +49,7 @@ public class NotificationHelper {
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification noti = new Notification();
-        noti.setLatestEventInfo(mContext, mPackageHelper.getAppName(), "下载完成,点击安装", pendingIntent);
+        noti.setLatestEventInfo(mContext, mContext.getString(R.string.app_name), "下载完成,点击安装", pendingIntent);
         noti.icon = android.R.drawable.stat_sys_download_done;
         noti.flags = Notification.FLAG_AUTO_CANCEL | Notification.DEFAULT_SOUND
                 | Notification.DEFAULT_LIGHTS;
