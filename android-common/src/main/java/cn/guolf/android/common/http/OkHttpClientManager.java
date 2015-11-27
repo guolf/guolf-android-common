@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,7 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.nio.Buffer;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -54,6 +56,8 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import cn.guolf.android.common.util.log.LogUtils;
+import okio.BufferedSource;
+import okio.Okio;
 
 /**
  * Author：guolf on 9/19/15 17:09
@@ -239,6 +243,7 @@ public class OkHttpClientManager {
                 } catch (IOException e) {
                     sendFailedStringCallback(response.request(), "IO异常:" + e.getMessage(), resCallBack);
                 }
+
             }
         });
     }
@@ -309,8 +314,8 @@ public class OkHttpClientManager {
     public static abstract class ResultCallback<T> {
 
         public ResultCallback() {
-        }
 
+        }
         public void onBefore(Request request) {
         }
 
@@ -1056,11 +1061,27 @@ public class OkHttpClientManager {
          * @param tag
          */
         public void downloadAsyn(final String url, final String destFileDir, final ResultCallback callback, Object tag) {
+
+            final ProgressResponseListener progressResponseListener = new ProgressResponseListener() {
+                @Override
+                public void onResponseProgress(long bytesRead, long contentLength, boolean done) {
+                    if (contentLength != -1) {
+                        //长度未知的情况下回返回-1
+                        LogUtils.i((100 * bytesRead) / contentLength + "% done");
+                        int values = (int)((100 * bytesRead) / contentLength);
+
+                        sendProgressResultCallback(values, callback);
+                    }
+                }
+            };
+
             final Request request = new Request.Builder()
                     .url(url)
                     .tag(tag)
+                    .addHeader("Accept-Encoding", "identity") // 取消gzip压缩，否则无法取得contentLength
                     .build();
-            final Call call = mOkHttpClient.newCall(request);
+
+            final Call call = ProgressHelper.addProgressResponseListener(mOkHttpClient,progressResponseListener).newCall(request);
             call.enqueue(new Callback() {
                 @Override
                 public void onFailure(final Request request, final IOException e) {
@@ -1070,26 +1091,22 @@ public class OkHttpClientManager {
                 @Override
                 public void onResponse(Response response) {
                     if (response.code() == 200) {
-                        double totalSize = ((RealResponseBody) response.body()).contentLength();
-
                         InputStream is = null;
                         byte[] buf = new byte[2048];
                         int len = 0;
                         FileOutputStream fos = null;
+
                         try {
                             is = response.body().byteStream();
                             File file = new File(destFileDir);
                             fos = new FileOutputStream(file);
-                            double total = 0;
+
                             while ((len = is.read(buf)) != -1) {
-                                total += buf.length;
                                 fos.write(buf, 0, len);
-                                double l = total / totalSize;
-                                // 更新进度条
-                                sendProgressResultCallback((int) (l * 100), callback);
                             }
                             fos.flush();
                             //如果下载文件成功，第一个参数为文件的绝对路径
+                            LogUtils.i("file size:"+file.length());
                             sendSuccessResultCallback(file.getAbsolutePath(), callback);
                         } catch (IOException e) {
                             sendFailedStringCallback(response.request(), e.getMessage(), callback);
