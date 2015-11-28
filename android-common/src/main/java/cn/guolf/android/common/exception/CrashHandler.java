@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
 
+import cn.guolf.android.common.util.AppUtils;
 import cn.guolf.android.common.util.log.LogUtils;
 
 /**
@@ -103,7 +104,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     public String getPhoneInfo() {
         StringBuilder result = new StringBuilder();
-
+        result.append("VersionCode=").append(AppUtils.getVerCode(mContext)).append('\n');
+        result.append("VersionName=").append(AppUtils.getVerName(mContext)).append('\n');
         result.append("BOARD=").append(Build.BOARD).append('\n');
         result.append("BRAND=").append(Build.BRAND).append('\n');
         result.append("CPU_ABI=").append(Build.CPU_ABI).append('\n');

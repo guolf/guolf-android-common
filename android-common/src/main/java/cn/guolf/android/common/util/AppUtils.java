@@ -14,18 +14,22 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.Signature;
 import android.net.Uri;
+import android.os.Build;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -254,51 +258,6 @@ public class AppUtils {
     }
 
     /**
-     * 获取应用签名
-     *
-     * @param context 上下文
-     * @param pkgName 包名
-     */
-    public static String getSign(Context context, String pkgName) {
-        try {
-            PackageInfo pis = context.getPackageManager().getPackageInfo(
-                    pkgName, PackageManager.GET_SIGNATURES);
-            return hexdigest(pis.signatures[0].toByteArray());
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * 将签名字符串转换成需要的32位签名
-     *
-     * @param paramArrayOfByte 签名byte数组
-     * @return 32位签名字符串
-     */
-    private static String hexdigest(byte[] paramArrayOfByte) {
-        final char[] hexDigits = {48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97,
-                98, 99, 100, 101, 102};
-        try {
-            MessageDigest localMessageDigest = MessageDigest.getInstance("MD5");
-            localMessageDigest.update(paramArrayOfByte);
-            byte[] arrayOfByte = localMessageDigest.digest();
-            char[] arrayOfChar = new char[32];
-            for (int i = 0, j = 0; ; i++, j++) {
-                if (i >= 16) {
-                    return new String(arrayOfChar);
-                }
-                int k = arrayOfByte[i];
-                arrayOfChar[j] = hexDigits[(0xF & k >>> 4)];
-                arrayOfChar[++j] = hexDigits[(k & 0xF)];
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    /**
      * 清理后台进程与服务
      *
      * @param context 应用上下文对象context
@@ -480,5 +439,121 @@ public class AppUtils {
         } catch (CertificateException e) {
         }
         return debuggable;
+    }
+
+    public static int getAppIcon(Context context) {
+        String packageName = context.getPackageName();
+        PackageInfo info = null;
+        try {
+            info = context.getPackageManager().getPackageInfo(packageName, 0);
+        } catch (Exception ex) {
+
+        }
+        return info != null ? info.applicationInfo.icon : android.R.drawable.ic_dialog_info;
+    }
+
+    /**
+     * 根据apk路径获取签名
+     *
+     * @param apkPath
+     * @return
+     */
+    public static String getApkSignature(String apkPath) {
+        String PATH_PackageParser = "android.content.pm.PackageParser";
+        try {
+            Class<?> pkgParserCls = Class.forName(PATH_PackageParser);
+            Class<?>[] typeArgs = new Class[1];
+            typeArgs[0] = String.class;
+            Object[] valueArgs = new Object[1];
+            valueArgs[0] = apkPath;
+            Object pkgParser;
+            if (Build.VERSION.SDK_INT > 19) {
+                pkgParser = pkgParserCls.newInstance();
+            } else {
+                Constructor constructor = pkgParserCls.getConstructor(typeArgs);
+                pkgParser = constructor.newInstance(valueArgs);
+            }
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            metrics.setToDefaults();
+
+            Object pkgParserPkg = null;
+            if (Build.VERSION.SDK_INT > 19) {
+                typeArgs = new Class[2];
+                typeArgs[0] = File.class;
+                typeArgs[1] = int.class;
+
+                Method pkgParser_parsePackageMtd = pkgParserCls.getDeclaredMethod(
+                        "parsePackage", typeArgs);
+                pkgParser_parsePackageMtd.setAccessible(true);
+
+                valueArgs = new Object[2];
+                valueArgs[0] = new File(apkPath);
+                valueArgs[1] = PackageManager.GET_SIGNATURES;
+                pkgParserPkg = pkgParser_parsePackageMtd.invoke(pkgParser,
+                        valueArgs);
+            } else {
+                typeArgs = new Class[4];
+                typeArgs[0] = File.class;
+                typeArgs[1] = String.class;
+                typeArgs[2] = DisplayMetrics.class;
+                typeArgs[3] = int.class;
+
+                Method pkgParser_parsePackageMtd = pkgParserCls.getDeclaredMethod(
+                        "parsePackage", typeArgs);
+                pkgParser_parsePackageMtd.setAccessible(true);
+
+                valueArgs = new Object[4];
+                valueArgs[0] = new File(apkPath);
+                valueArgs[1] = apkPath;
+                valueArgs[2] = metrics;
+                valueArgs[3] = PackageManager.GET_SIGNATURES;
+                pkgParserPkg = pkgParser_parsePackageMtd.invoke(pkgParser,
+                        valueArgs);
+            }
+
+
+            typeArgs = new Class[2];
+            typeArgs[0] = pkgParserPkg.getClass();
+            typeArgs[1] = int.class;
+            Method pkgParser_collectCertificatesMtd = pkgParserCls.getDeclaredMethod("collectCertificates", typeArgs);
+            valueArgs = new Object[2];
+            valueArgs[0] = pkgParserPkg;
+            valueArgs[1] = PackageManager.GET_SIGNATURES;
+            pkgParser_collectCertificatesMtd.invoke(pkgParser, valueArgs);
+            Field packageInfoFld = pkgParserPkg.getClass().getDeclaredField(
+                    "mSignatures");
+            Signature[] info = (Signature[]) packageInfoFld.get(pkgParserPkg);
+            return info[0].toCharsString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * 根据包名获取签名
+     *
+     * @param context
+     * @param packageName
+     * @return
+     */
+    public static String getInstallPackageSignature(Context context,
+                                                    String packageName) {
+        PackageManager pm = context.getPackageManager();
+        List<PackageInfo> apps = pm
+                .getInstalledPackages(PackageManager.GET_SIGNATURES);
+
+        Iterator<PackageInfo> iter = apps.iterator();
+        while (iter.hasNext()) {
+            PackageInfo packageinfo = iter.next();
+            String thisName = packageinfo.packageName;
+            if (thisName.equals(packageName)) {
+                return packageinfo.signatures[0].toCharsString();
+            }
+        }
+
+        return null;
     }
 }
