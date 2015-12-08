@@ -85,7 +85,7 @@ public class EasyImage implements EasyImageConfig {
 
         Intent galleryIntent = createGalleryIntent();
 
-        Intent chooserIntent = Intent.createChooser(galleryIntent, "Select Source");
+        Intent chooserIntent = Intent.createChooser(galleryIntent, "Select IMAGE");
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, cameraIntents.toArray(new Parcelable[cameraIntents.size()]));
 
         return chooserIntent;
