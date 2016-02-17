@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 android {
     compileSdkVersion 22
@@ -7,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.2"
     }
     buildTypes {
         release {
@@ -22,4 +24,30 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.0'
     provided 'com.squareup.okhttp:okhttp:2.5.0'
     provided 'com.squareup.okio:okio:1.6.0'
+}
+
+signing {
+    required { has("release") && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+uploadArchives {
+    configuration = configurations.archives
+    repositories.mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        repository(url: 'http://117.21.249.46:17005/nexus/content/repositories/android-lib/') {//仓库地址
+            authentication(userName: "ylws",//用户名
+                    password: "ylwssyb")//密码
+        }
+
+        pom.project {
+            name 'android-common'
+            packaging 'aar'
+            description 'none'
+            url 'http://117.21.249.46:17005/nexus/content/repositories/android-lib/'//仓库地址
+            groupId "cn.guolf.android.common"
+            artifactId rootProject.name
+            version android.defaultConfig.versionName
+        }
+    }
 }

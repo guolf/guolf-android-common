@@ -26,6 +26,7 @@ import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
+import android.util.Base64;
 import android.view.View;
 
 import java.io.ByteArrayInputStream;
@@ -1625,5 +1626,29 @@ public class BitmapUtils {
                         * width];
         }
         return rotatedData;
+    }
+
+    /**
+     * bitmap转base64
+     * @param bitmap
+     * @param quality
+     * @return
+     */
+    public static String bitmaptoString(Bitmap bitmap,int quality) {
+        ByteArrayOutputStream jpeg_data = new ByteArrayOutputStream();
+        try {
+            if (bitmap.compress(Bitmap.CompressFormat.JPEG, quality, jpeg_data)) {
+                byte[] code = jpeg_data.toByteArray();
+                byte[] output = Base64.encode(code, Base64.NO_WRAP);
+                String out = new String(output);
+                output = null;
+                code = null;
+                return out;
+            }
+        } catch (Exception e) {
+
+        }
+        jpeg_data = null;
+        return "";
     }
 }

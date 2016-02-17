@@ -33,7 +33,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
-        LogUtils.e("app crash：" + ex);
+        LogUtils.e("app crash：" + ex.toString());
         if (!handleException(ex) && mDefaultHandler != null) {
             // 如果用户没有处理则让系统默认的异常处理器来处理
             mDefaultHandler.uncaughtException(thread, ex);
@@ -80,9 +80,12 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
                 try {
                     FileOutputStream fos = new FileOutputStream(file1, true);
                     fos.write(getPhoneInfo().getBytes());
+                    LogUtils.e(getPhoneInfo());
                     fos.write(msg.getBytes());
                     for (int i = 0; i < ex.getStackTrace().length; i++) {
-                        fos.write(ex.getStackTrace()[i].toString().getBytes());
+                        String detail = ex.getStackTrace()[i].toString();
+                        LogUtils.e(detail);
+                        fos.write(detail.getBytes());
                     }
 
                     fos.flush();
