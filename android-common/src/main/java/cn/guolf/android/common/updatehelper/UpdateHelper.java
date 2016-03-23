@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Environment;
 import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ScrollView;
@@ -95,6 +96,8 @@ public class UpdateHelper {
      * @return 匹配结果
      */
     public static boolean testSHA1(String sha1, File file) {
+        if(TextUtils.isEmpty(sha1) || !file.exists())
+            return false;
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA1");
@@ -279,27 +282,4 @@ public class UpdateHelper {
         String filePath = Environment.getExternalStorageDirectory() + File.separator + fileName;
         return filePath;
     }
-
-    public class DefaultUpdateInfoParser implements AbsUpdateInfoParser {
-
-        @Override
-        public UpdateInfoBean parse(String info) {
-            UpdateInfoBean bean = new UpdateInfoBean();
-            try {
-                JSONObject json = new JSONObject(info);
-                bean.setFlag(json.getBoolean("flag"));
-                bean.setVersionName(json.getString("version_name"));
-                bean.setVersionCode(json.getInt("version_code"));
-                bean.setDownUrl(json.getString("apkUrl"));
-                bean.setWhatsNew(json.getString("msg"));
-                bean.setSha1(json.getString("sha1"));
-                return bean;
-            } catch (JSONException ex) {
-                LogUtils.e(ex);
-            }
-
-            return null;
-        }
-    }
-
 }
