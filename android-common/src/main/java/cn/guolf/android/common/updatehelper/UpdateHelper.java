@@ -13,6 +13,9 @@ import android.widget.Toast;
 
 import com.squareup.okhttp.Request;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,7 +39,7 @@ import cn.guolf.android.common.util.log.LogUtils;
  * AbsUpdateInfoParser parser = new AbsUpdateInfoParser() {
  *
  * @Override public UpdateInfoBean parse(String info) {
- * <p/>
+ *
  * UpdateInfoBean bean = new UpdateInfoBean();
  * try {
  * JSONObject json = new JSONObject(info);
@@ -223,7 +226,7 @@ public class UpdateHelper {
                 Toast.makeText(mActivity, "更新文件已下载,快速安装", Toast.LENGTH_SHORT).show();
                 AppUtils.installApk(mActivity, destFile);
                 return;
-            }else{
+            } else {
                 destFile.delete();
             }
         }
@@ -245,13 +248,13 @@ public class UpdateHelper {
                     public void onResponse(String path) {
                         LogUtils.i("下载完成," + path);
                         File file = new File(path);
-                        if(!bean.isFlag()) {
+                        if (!bean.isFlag()) {
                             // 如果是强制更新，进度框不隐藏
                             mProgressDialog.dismiss();
                         }
-                        if(testSHA1(bean.getSha1(),file)){
-                            AppUtils.installApk(mActivity,file);
-                        }else{
+                        if (testSHA1(bean.getSha1(), file)) {
+                            AppUtils.installApk(mActivity, file);
+                        } else {
                             Toast.makeText(mActivity, "文件校验失败", Toast.LENGTH_SHORT).show();
                         }
                         mNotificationHelper.notifyDownloadFinish(file);
@@ -275,6 +278,28 @@ public class UpdateHelper {
         String fileName = mActivity.getPackageName() + "-" + bean.getVersionCode() + ".apk";
         String filePath = Environment.getExternalStorageDirectory() + File.separator + fileName;
         return filePath;
+    }
+
+    public class DefaultUpdateInfoParser implements AbsUpdateInfoParser {
+
+        @Override
+        public UpdateInfoBean parse(String info) {
+            UpdateInfoBean bean = new UpdateInfoBean();
+            try {
+                JSONObject json = new JSONObject(info);
+                bean.setFlag(json.getBoolean("flag"));
+                bean.setVersionName(json.getString("version_name"));
+                bean.setVersionCode(json.getInt("version_code"));
+                bean.setDownUrl(json.getString("apkUrl"));
+                bean.setWhatsNew(json.getString("msg"));
+                bean.setSha1(json.getString("sha1"));
+                return bean;
+            } catch (JSONException ex) {
+                LogUtils.e(ex);
+            }
+
+            return null;
+        }
     }
 
 }
