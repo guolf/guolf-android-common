@@ -2,6 +2,8 @@
     package="cn.guolf.android.common">
 
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application android:allowBackup="true" android:label="@string/app_name" android:name=".app.ApplicationBase">
 
     </application>

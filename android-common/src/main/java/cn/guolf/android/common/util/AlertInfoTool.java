@@ -17,6 +17,7 @@ public class AlertInfoTool extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage(msg);
         builder.setTitle(title);
+        builder.setCancelable(false);
         builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -36,10 +37,11 @@ public class AlertInfoTool extends Activity {
     }
 
     public static void alert(Context context, String title, String msg,
-                               final AlertInfoToolOper alertInfoToolOper) {
+                             final AlertInfoToolOper alertInfoToolOper) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage(msg);
         builder.setTitle(title);
+        builder.setCancelable(false);
         builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {

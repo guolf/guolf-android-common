@@ -71,6 +71,7 @@ class HighlightView {
     private float handleRadius;
     private float outlineWidth;
     private boolean isFocused;
+
     public HighlightView(View context) {
         viewContext = context;
         initStyles(context.getContext());

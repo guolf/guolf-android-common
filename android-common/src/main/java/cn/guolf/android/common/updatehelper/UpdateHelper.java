@@ -3,19 +3,18 @@ package cn.guolf.android.common.updatehelper;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Environment;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.okhttp.Request;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,10 +25,13 @@ import java.math.BigInteger;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.jar.Manifest;
 
 import cn.guolf.android.common.R;
 import cn.guolf.android.common.http.OkHttpClientManager;
+import cn.guolf.android.common.util.AlertInfoTool;
 import cn.guolf.android.common.util.AppUtils;
+import cn.guolf.android.common.util.PermissionUtils;
 import cn.guolf.android.common.util.log.LogUtils;
 
 /**
@@ -96,7 +98,7 @@ public class UpdateHelper {
      * @return 匹配结果
      */
     public static boolean testSHA1(String sha1, File file) {
-        if(TextUtils.isEmpty(sha1) || !file.exists())
+        if (TextUtils.isEmpty(sha1) || !file.exists())
             return false;
         MessageDigest digest;
         try {
@@ -155,6 +157,8 @@ public class UpdateHelper {
 
             @Override
             public void onResponse(Object response) {
+                if (mActivity.isFinishing())
+                    return;
                 UpdateInfoBean infoBean = mParser.parse(response.toString());
                 if (infoBean != null
                         && infoBean.getVersionCode() > AppUtils.getVerCode(mActivity)) {
@@ -198,35 +202,44 @@ public class UpdateHelper {
             }
         };
 
+        StringBuilder sb = new StringBuilder();
+        sb.append(mActivity.getString(R.string.download_whether)).append("\n\n");
+        sb.append(mActivity.getString(R.string.download_latest_version)).append(bean.getVersionName()).append("\n");
+        sb.append(mActivity.getString(R.string.download_current_version)).append(AppUtils.getVerName(mActivity)).append("\n");
+        sb.append(mActivity.getString(R.string.download_content)).append(bean.getWhatsNew());
+
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
         builder.setIcon(android.R.drawable.ic_dialog_alert);
-        builder.setTitle("发现新版本");
-        builder.setMessage("是否下载?\n\n最新版本:" + bean.getVersionName() + "\n当前版本:" + AppUtils.getVerName(mActivity) + "\n更新内容:" + bean.getWhatsNew());
-        builder.setPositiveButton("下载", positiveBtnLsnr);
-        builder.setNegativeButton("下次再说", negativeBtnLsnr);
+        builder.setTitle(mActivity.getString(R.string.download_discover));
+        builder.setMessage(sb.toString());
+        builder.setPositiveButton(mActivity.getString(R.string.download_ok), positiveBtnLsnr);
+        builder.setNegativeButton(mActivity.getString(R.string.download_cancel), negativeBtnLsnr);
         builder.setCancelable(false);
         builder.create();
         builder.show();
     }
 
-    /**
-     * 修正Android2.x上,包含ScrollView的Dialog总是充满屏幕的问题
-     *
-     * @param scrollView
-     */
-    private void fixScrollViewHeight(ScrollView scrollView) {
-        int screenHeight = mActivity.getWindowManager().getDefaultDisplay().getHeight();
-        LayoutParams lp = scrollView.getLayoutParams();
-        lp.height = screenHeight / 3;
-        scrollView.setLayoutParams(lp);
-    }
-
     private void downApk(final UpdateInfoBean bean) {
+        if(!PermissionUtils.check(mActivity, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+            AlertInfoTool.alert(mActivity, "存储空间权限被禁止", "请计入设置-应用-卫监助手，进入权限页，开启此权限", new AlertInfoTool.AlertInfoToolOper() {
+                @Override
+                public void operate() {
+                    try {
+                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + mActivity.getPackageName()));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        mActivity.startActivity(intent);
+                    }catch (Exception ex){}
+                }
+            });
+            return;
+        }
         String path = getDownfilePath(bean);
         File destFile = new File(path);
+        // 更新文件已存在，sha1校验通过则直接安装。否则删除重新下载
         if (destFile.exists()) {
             if (testSHA1(bean.getSha1(), destFile)) {
-                Toast.makeText(mActivity, "更新文件已下载,快速安装", Toast.LENGTH_SHORT).show();
+                Toast.makeText(mActivity, mActivity.getString(R.string.download_completed_install), Toast.LENGTH_SHORT).show();
                 AppUtils.installApk(mActivity, destFile);
                 return;
             } else {
@@ -234,8 +247,8 @@ public class UpdateHelper {
             }
         }
         mProgressDialog = new ProgressDialog(mActivity);
-        mProgressDialog.setTitle("应用更新");
-        mProgressDialog.setMessage("下载中...");
+        mProgressDialog.setTitle(mActivity.getString(R.string.download_title));
+        mProgressDialog.setMessage(mActivity.getString(R.string.download_msg));
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         mProgressDialog.setCancelable(false);
         mProgressDialog.setMax(100);
@@ -244,6 +257,7 @@ public class UpdateHelper {
                     @Override
                     public void onError(Request request, String e) {
                         LogUtils.e("下载失败" + e);
+                        Toast.makeText(mActivity, mActivity.getString(R.string.download_error), Toast.LENGTH_SHORT).show();
                         mProgressDialog.dismiss();
                     }
 
@@ -258,7 +272,7 @@ public class UpdateHelper {
                         if (testSHA1(bean.getSha1(), file)) {
                             AppUtils.installApk(mActivity, file);
                         } else {
-                            Toast.makeText(mActivity, "文件校验失败", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(mActivity, mActivity.getString(R.string.download_check_sha1_error), Toast.LENGTH_SHORT).show();
                         }
                         mNotificationHelper.notifyDownloadFinish(file);
                     }
@@ -278,7 +292,7 @@ public class UpdateHelper {
     }
 
     private String getDownfilePath(UpdateInfoBean bean) {
-        String fileName = mActivity.getPackageName() + "-" + bean.getVersionCode() + ".apk";
+        String fileName = mActivity.getPackageName() + "_" + bean.getVersionCode() + "_" + bean.getVersionName() + ".apk";
         String filePath = Environment.getExternalStorageDirectory() + File.separator + fileName;
         return filePath;
     }

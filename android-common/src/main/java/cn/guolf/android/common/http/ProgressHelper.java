@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 public class ProgressHelper {
 
-    public static OkHttpClient addProgressResponseListener(OkHttpClient client,final ProgressResponseListener progressListener){
+    public static OkHttpClient addProgressResponseListener(OkHttpClient client, final ProgressResponseListener progressListener) {
         OkHttpClient clone = client.clone();
         // 增加拦截器
         clone.networkInterceptors().add(new Interceptor() {

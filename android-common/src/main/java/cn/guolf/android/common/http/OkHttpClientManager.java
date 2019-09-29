@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,20 +19,16 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
-import com.squareup.okhttp.internal.http.RealResponseBody;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.FileNameMap;
 import java.net.URLConnection;
-import java.nio.Buffer;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -56,8 +51,6 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import cn.guolf.android.common.util.log.LogUtils;
-import okio.BufferedSource;
-import okio.Okio;
 
 /**
  * Author：guolf on 9/19/15 17:09
@@ -316,6 +309,7 @@ public class OkHttpClientManager {
         public ResultCallback() {
 
         }
+
         public void onBefore(Request request) {
         }
 
@@ -945,7 +939,7 @@ public class OkHttpClientManager {
                     fileBody = RequestBody.create(MediaType.parse(guessMimeType(fileName)), file);
                     //TODO 根据文件名设置contentType
                     builder.addPart(Headers.of("Content-Disposition",
-                                    "form-data; name=\"" + fileKeys[i] + "\"; filename=\"" + fileName + "\""),
+                            "form-data; name=\"" + fileKeys[i] + "\"; filename=\"" + fileName + "\""),
                             fileBody);
                 }
             }
@@ -1068,7 +1062,7 @@ public class OkHttpClientManager {
                     if (contentLength != -1) {
                         //长度未知的情况下回返回-1
                         LogUtils.i((100 * bytesRead) / contentLength + "% done");
-                        int values = (int)((100 * bytesRead) / contentLength);
+                        int values = (int) ((100 * bytesRead) / contentLength);
 
                         sendProgressResultCallback(values, callback);
                     }
@@ -1081,7 +1075,7 @@ public class OkHttpClientManager {
                     .addHeader("Accept-Encoding", "identity") // 取消gzip压缩，否则无法取得contentLength
                     .build();
 
-            final Call call = ProgressHelper.addProgressResponseListener(mOkHttpClient,progressResponseListener).newCall(request);
+            final Call call = ProgressHelper.addProgressResponseListener(mOkHttpClient, progressResponseListener).newCall(request);
             call.enqueue(new Callback() {
                 @Override
                 public void onFailure(final Request request, final IOException e) {
@@ -1106,7 +1100,7 @@ public class OkHttpClientManager {
                             }
                             fos.flush();
                             //如果下载文件成功，第一个参数为文件的绝对路径
-                            LogUtils.i("file size:"+file.length());
+                            LogUtils.i("file size:" + file.length());
                             sendSuccessResultCallback(file.getAbsolutePath(), callback);
                         } catch (IOException e) {
                             sendFailedStringCallback(response.request(), e.getMessage(), callback);

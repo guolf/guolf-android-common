@@ -31,6 +31,7 @@ import android.view.View;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -97,13 +98,6 @@ public class BitmapUtils {
      */
     public static Bitmap getBitmapFromResource(Resources res, int resId,
                                                int reqWidth, int reqHeight) {
-        // BitmapFactory.Options options = new BitmapFactory.Options();
-        // options.inJustDecodeBounds = true;
-        // BitmapFactory.decodeResource(res, resId, options);
-        // options = BitmapHelper.calculateInSampleSize(options, reqWidth,
-        // reqHeight);
-        // return BitmapFactory.decodeResource(res, resId, options);
-
         // 通过JNI的形式读取本地图片达到节省内存的目的
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.RGB_565;
@@ -127,6 +121,7 @@ public class BitmapUtils {
         options = calculateInSampleSize(options, reqWidth, reqHeight);
         return BitmapFactory.decodeFile(pathName, options);
     }
+
 
     /**
      * 获取一个指定大小的bitmap
@@ -1630,11 +1625,12 @@ public class BitmapUtils {
 
     /**
      * bitmap转base64
+     *
      * @param bitmap
      * @param quality
      * @return
      */
-    public static String bitmaptoString(Bitmap bitmap,int quality) {
+    public static String bitmaptoString(Bitmap bitmap, int quality) {
         ByteArrayOutputStream jpeg_data = new ByteArrayOutputStream();
         try {
             if (bitmap.compress(Bitmap.CompressFormat.JPEG, quality, jpeg_data)) {

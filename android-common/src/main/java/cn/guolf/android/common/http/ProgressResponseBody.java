@@ -5,7 +5,6 @@ import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
 
-import cn.guolf.android.common.util.log.LogUtils;
 import okio.Buffer;
 import okio.BufferedSource;
 import okio.ForwardingSource;
@@ -53,7 +52,9 @@ public class ProgressResponseBody extends ResponseBody {
         return new ForwardingSource(source) {
             //当前读取字节数
             long totalBytesRead = 0L;
-            @Override public long read(Buffer sink, long byteCount) throws IOException {
+
+            @Override
+            public long read(Buffer sink, long byteCount) throws IOException {
                 long bytesRead = super.read(sink, byteCount);
                 //增加当前读取的字节数，如果读取完成了bytesRead会返回-1
                 totalBytesRead += bytesRead != -1 ? bytesRead : 0;

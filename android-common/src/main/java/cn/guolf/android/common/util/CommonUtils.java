@@ -40,6 +40,7 @@ public class CommonUtils {
 
     /**
      * 根据指定日期格式获取当前时间
+     *
      * @param dateFormat 时间格式（yyyy-MM-dd hh:mm:ss）
      * @return
      */
@@ -79,6 +80,7 @@ public class CommonUtils {
         }, dateTime.get(Calendar.YEAR), dateTime.get(Calendar.MONTH),
                 dateTime.get(Calendar.DAY_OF_MONTH)).show();
     }
+
     /**
      * show timepicker
      *

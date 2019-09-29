@@ -27,19 +27,6 @@ import java.util.List;
 public class EasyImage implements EasyImageConfig {
 
     private static final boolean SHOW_GALLERY_IN_CHOOSER = false;
-
-    public enum ImageSource {
-        GALLERY, DOCUMENTS, CAMERA
-    }
-
-    public interface Callbacks {
-        void onImagePickerError(Exception e, ImageSource source, int type);
-
-        void onImagePicked(File imageFile, ImageSource source, int type);
-
-        void onCanceled(ImageSource source, int type);
-    }
-
     private static final String KEY_PHOTO_URI = "pl.aprilapps.easyphotopicker.photo_uri";
     private static final String KEY_LAST_CAMERA_PHOTO = "pl.aprilapps.easyphotopicker.last_photo";
     private static final String KEY_TYPE = "pl.aprilapps.easyphotopicker.type";
@@ -221,14 +208,12 @@ public class EasyImage implements EasyImageConfig {
         fragment.startActivityForResult(intent, REQ_TAKE_PICTURE);
     }
 
-
     private static File takenCameraPicture(Context context) throws IOException, URISyntaxException {
         @SuppressWarnings("ConstantConditions")
         URI imageUri = new URI(PreferenceManager.getDefaultSharedPreferences(context).getString(KEY_PHOTO_URI, null));
         notifyGallery(context, imageUri);
         return new File(imageUri);
     }
-
 
     private static void notifyGallery(Context context, URI pictureUri) throws URISyntaxException {
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -237,7 +222,6 @@ public class EasyImage implements EasyImageConfig {
         mediaScanIntent.setData(contentUri);
         context.sendBroadcast(mediaScanIntent);
     }
-
 
     public static void handleActivityResult(int requestCode, int resultCode, Intent data, Activity activity, Callbacks callbacks) {
         if (requestCode == EasyImageConfig.REQ_SOURCE_CHOOSER || requestCode == EasyImageConfig.REQ_PICK_PICTURE_FROM_GALLERY || requestCode == EasyImageConfig.REQ_TAKE_PICTURE || requestCode == EasyImageConfig.REQ_PICK_PICTURE_FROM_DOCUMENTS) {
@@ -325,7 +309,6 @@ public class EasyImage implements EasyImageConfig {
         }
     }
 
-
     /**
      * Method to clear configuration. Would likely be used in onDestroy(), onDestroyView()...
      *
@@ -341,6 +324,19 @@ public class EasyImage implements EasyImageConfig {
 
     public static Configuration configuration(Context context) {
         return new Configuration(context);
+    }
+
+
+    public enum ImageSource {
+        GALLERY, DOCUMENTS, CAMERA
+    }
+
+    public interface Callbacks {
+        void onImagePickerError(Exception e, ImageSource source, int type);
+
+        void onImagePicked(File imageFile, ImageSource source, int type);
+
+        void onCanceled(ImageSource source, int type);
     }
 
     public static class Configuration {

@@ -23,6 +23,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     private Context mContext;
     private Thread.UncaughtExceptionHandler mDefaultHandler;
 
+    private String logPath = Environment.getExternalStorageDirectory().getPath();
+
+
     public static CrashHandler getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new CrashHandler();
@@ -58,40 +61,14 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         if (ex == null) {
             return false;
         }
-        final String msg = ex.getLocalizedMessage();
 
         new Thread() {
             @Override
             public void run() {
                 Looper.prepare();
                 Toast.makeText(mContext, "程序出现异常,即将关闭该页面,请联系我们,我们会尽快处理,给你带来的不便请原谅!", Toast.LENGTH_LONG).show();
-                save();
+                saveExection(ex);
                 Looper.loop();
-            }
-
-            private void save() {
-                String fileName = "crash-" + new Date().getTime() + ".txt";
-                File file = new File(Environment.getExternalStorageDirectory()
-                        + "/log");
-                if (!file.exists()) {
-                    file.mkdirs();
-                }
-                File file1 = new File(file, fileName);
-                try {
-                    FileOutputStream fos = new FileOutputStream(file1, true);
-                    fos.write(getPhoneInfo().getBytes());
-                    LogUtils.e(getPhoneInfo());
-                    fos.write(msg.getBytes());
-                    for (int i = 0; i < ex.getStackTrace().length; i++) {
-                        String detail = ex.getStackTrace()[i].toString();
-                        LogUtils.e(detail);
-                        fos.write(detail.getBytes());
-                    }
-
-                    fos.flush();
-                    fos.close();
-                } catch (Exception e) {
-                }
             }
 
         }.start();
@@ -130,5 +107,44 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         result.append("VERSION.SDK_INT=").append(Build.VERSION.SDK_INT).append('\n');
 
         return result.toString();
+    }
+
+    /**
+     * 保存捕获的异常
+     *
+     * @param ex
+     */
+    public void saveExection(Throwable ex) {
+        String msg = ex.getLocalizedMessage();
+        String fileName = "crash-" + new Date().getTime() + ".txt";
+        File file = new File(getLogPath() + "/log");
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        File file1 = new File(file, fileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(file1, true);
+            fos.write(getPhoneInfo().getBytes());
+            LogUtils.e(getPhoneInfo());
+            fos.write(msg.getBytes());
+            for (int i = 0; i < ex.getStackTrace().length; i++) {
+                String detail = ex.getStackTrace()[i].toString();
+                LogUtils.e(detail);
+                fos.write(detail.getBytes());
+            }
+
+            fos.flush();
+            fos.close();
+        } catch (Exception e) {
+            LogUtils.e(e);
+        }
+    }
+
+    public String getLogPath() {
+        return logPath;
+    }
+
+    public void setLogPath(String logPath) {
+        this.logPath = logPath;
     }
 }

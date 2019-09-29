@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2012-2013, Michael Yang 杨福海 (www.yangfuhai.com).
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 package cn.guolf.android.common.cache;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,26 +47,15 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.PixelFormat;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-
 /**
  * @author Michael Yang（www.yangfuhai.com） update at 2013.08.07
  * https://github.com/yangfuhai/ASimpleCache/blob/master/source/src/org/afinal/simplecache/ACache.java
  * example
  * <pre>
-        ACache mCache = ACache.get(this);
-        mCache.put("test_key1", "test value");
-        mCache.put("test_key2", "test value", 10);//保存10秒，如果超过10秒去获取这个key，将为null
-        mCache.put("test_key3", "test value", 2 * ACache.TIME_DAY);//保存两天，如果超过两天去获取这个key，将为null
+ACache mCache = ACache.get(this);
+mCache.put("test_key1", "test value");
+mCache.put("test_key2", "test value", 10);//保存10秒，如果超过10秒去获取这个key，将为null
+mCache.put("test_key3", "test value", 2 * ACache.TIME_DAY);//保存两天，如果超过两天去获取这个key，将为null
  * </pre>
  */
 public class ACache {
@@ -65,6 +65,14 @@ public class ACache {
     private static final int MAX_COUNT = Integer.MAX_VALUE; // 不限制存放数据的数量
     private static Map<String, ACache> mInstanceMap = new HashMap<String, ACache>();
     private ACacheManager mCache;
+
+    private ACache(File cacheDir, long max_size, int max_count) {
+        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+            throw new RuntimeException("can't make dirs in "
+                    + cacheDir.getAbsolutePath());
+        }
+        mCache = new ACacheManager(cacheDir, max_size, max_count);
+    }
 
     public static ACache get(Context ctx) {
         return get(ctx, "ACache");
@@ -97,17 +105,10 @@ public class ACache {
         return "_" + android.os.Process.myPid();
     }
 
-    private ACache(File cacheDir, long max_size, int max_count) {
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new RuntimeException("can't make dirs in "
-                    + cacheDir.getAbsolutePath());
-        }
-        mCache = new ACacheManager(cacheDir, max_size, max_count);
-    }
-
     // =======================================
     // ============ String数据 读写 ==============
     // =======================================
+
     /**
      * 保存 String数据 到 缓存中
      *
@@ -195,6 +196,7 @@ public class ACache {
     // =======================================
     // ============= JSONObject 数据 读写 ==============
     // =======================================
+
     /**
      * 保存 JSONObject数据 到 缓存中
      *
@@ -241,6 +243,7 @@ public class ACache {
     // =======================================
     // ============ JSONArray 数据 读写 =============
     // =======================================
+
     /**
      * 保存 JSONArray数据 到 缓存中
      *
@@ -287,6 +290,7 @@ public class ACache {
     // =======================================
     // ============== byte 数据 读写 =============
     // =======================================
+
     /**
      * 保存 byte数据 到 缓存中
      *
@@ -371,6 +375,7 @@ public class ACache {
     // =======================================
     // ============= 序列化 数据 读写 ===============
     // =======================================
+
     /**
      * 保存 Serializable数据 到 缓存中
      *
@@ -457,6 +462,7 @@ public class ACache {
     // =======================================
     // ============== bitmap 数据 读写 =============
     // =======================================
+
     /**
      * 保存 bitmap 到 缓存中
      *
@@ -499,6 +505,7 @@ public class ACache {
     // =======================================
     // ============= drawable 数据 读写 =============
     // =======================================
+
     /**
      * 保存 drawable 到 缓存中
      *
@@ -566,6 +573,175 @@ public class ACache {
      */
     public void clear() {
         mCache.clear();
+    }
+
+    /**
+     * @title 时间计算工具类
+     * @author 杨福海（michael） www.yangfuhai.com
+     * @version 1.0
+     */
+    private static class Utils {
+
+        private static final char mSeparator = ' ';
+
+        /**
+         * 判断缓存的String数据是否到期
+         *
+         * @param str
+         * @return true：到期了 false：还没有到期
+         */
+        private static boolean isDue(String str) {
+            return isDue(str.getBytes());
+        }
+
+        /**
+         * 判断缓存的byte数据是否到期
+         *
+         * @param data
+         * @return true：到期了 false：还没有到期
+         */
+        private static boolean isDue(byte[] data) {
+            String[] strs = getDateInfoFromDate(data);
+            if (strs != null && strs.length == 2) {
+                String saveTimeStr = strs[0];
+                while (saveTimeStr.startsWith("0")) {
+                    saveTimeStr = saveTimeStr
+                            .substring(1, saveTimeStr.length());
+                }
+                long saveTime = Long.valueOf(saveTimeStr);
+                long deleteAfter = Long.valueOf(strs[1]);
+                if (System.currentTimeMillis() > saveTime + deleteAfter * 1000) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static String newStringWithDateInfo(int second, String strInfo) {
+            return createDateInfo(second) + strInfo;
+        }
+
+        private static byte[] newByteArrayWithDateInfo(int second, byte[] data2) {
+            byte[] data1 = createDateInfo(second).getBytes();
+            byte[] retdata = new byte[data1.length + data2.length];
+            System.arraycopy(data1, 0, retdata, 0, data1.length);
+            System.arraycopy(data2, 0, retdata, data1.length, data2.length);
+            return retdata;
+        }
+
+        private static String clearDateInfo(String strInfo) {
+            if (strInfo != null && hasDateInfo(strInfo.getBytes())) {
+                strInfo = strInfo.substring(strInfo.indexOf(mSeparator) + 1,
+                        strInfo.length());
+            }
+            return strInfo;
+        }
+
+        private static byte[] clearDateInfo(byte[] data) {
+            if (hasDateInfo(data)) {
+                return copyOfRange(data, indexOf(data, mSeparator) + 1,
+                        data.length);
+            }
+            return data;
+        }
+
+        private static boolean hasDateInfo(byte[] data) {
+            return data != null && data.length > 15 && data[13] == '-'
+                    && indexOf(data, mSeparator) > 14;
+        }
+
+        private static String[] getDateInfoFromDate(byte[] data) {
+            if (hasDateInfo(data)) {
+                String saveDate = new String(copyOfRange(data, 0, 13));
+                String deleteAfter = new String(copyOfRange(data, 14,
+                        indexOf(data, mSeparator)));
+                return new String[]{saveDate, deleteAfter};
+            }
+            return null;
+        }
+
+        private static int indexOf(byte[] data, char c) {
+            for (int i = 0; i < data.length; i++) {
+                if (data[i] == c) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private static byte[] copyOfRange(byte[] original, int from, int to) {
+            int newLength = to - from;
+            if (newLength < 0)
+                throw new IllegalArgumentException(from + " > " + to);
+            byte[] copy = new byte[newLength];
+            System.arraycopy(original, from, copy, 0,
+                    Math.min(original.length - from, newLength));
+            return copy;
+        }
+
+        private static String createDateInfo(int second) {
+            String currentTime = System.currentTimeMillis() + "";
+            while (currentTime.length() < 13) {
+                currentTime = "0" + currentTime;
+            }
+            return currentTime + "-" + second + mSeparator;
+        }
+
+        /*
+         * Bitmap → byte[]
+         */
+        private static byte[] Bitmap2Bytes(Bitmap bm) {
+            if (bm == null) {
+                return null;
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bm.compress(Bitmap.CompressFormat.PNG, 100, baos);
+            return baos.toByteArray();
+        }
+
+        /*
+         * byte[] → Bitmap
+         */
+        private static Bitmap Bytes2Bimap(byte[] b) {
+            if (b.length == 0) {
+                return null;
+            }
+            return BitmapFactory.decodeByteArray(b, 0, b.length);
+        }
+
+        /*
+         * Drawable → Bitmap
+         */
+        private static Bitmap drawable2Bitmap(Drawable drawable) {
+            if (drawable == null) {
+                return null;
+            }
+            // 取 drawable 的长宽
+            int w = drawable.getIntrinsicWidth();
+            int h = drawable.getIntrinsicHeight();
+            // 取 drawable 的颜色格式
+            Bitmap.Config config = drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
+                    : Bitmap.Config.RGB_565;
+            // 建立对应 bitmap
+            Bitmap bitmap = Bitmap.createBitmap(w, h, config);
+            // 建立对应 bitmap 的画布
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, w, h);
+            // 把 drawable 内容画到画布中
+            drawable.draw(canvas);
+            return bitmap;
+        }
+
+        /*
+         * Bitmap → Drawable
+         */
+        @SuppressWarnings("deprecation")
+        private static Drawable bitmap2Drawable(Bitmap bm) {
+            if (bm == null) {
+                return null;
+            }
+            return new BitmapDrawable(bm);
+        }
     }
 
     /**
@@ -704,175 +880,6 @@ public class ACache {
 
         private long calculateSize(File file) {
             return file.length();
-        }
-    }
-
-    /**
-     * @title 时间计算工具类
-     * @author 杨福海（michael） www.yangfuhai.com
-     * @version 1.0
-     */
-    private static class Utils {
-
-        /**
-         * 判断缓存的String数据是否到期
-         *
-         * @param str
-         * @return true：到期了 false：还没有到期
-         */
-        private static boolean isDue(String str) {
-            return isDue(str.getBytes());
-        }
-
-        /**
-         * 判断缓存的byte数据是否到期
-         *
-         * @param data
-         * @return true：到期了 false：还没有到期
-         */
-        private static boolean isDue(byte[] data) {
-            String[] strs = getDateInfoFromDate(data);
-            if (strs != null && strs.length == 2) {
-                String saveTimeStr = strs[0];
-                while (saveTimeStr.startsWith("0")) {
-                    saveTimeStr = saveTimeStr
-                            .substring(1, saveTimeStr.length());
-                }
-                long saveTime = Long.valueOf(saveTimeStr);
-                long deleteAfter = Long.valueOf(strs[1]);
-                if (System.currentTimeMillis() > saveTime + deleteAfter * 1000) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static String newStringWithDateInfo(int second, String strInfo) {
-            return createDateInfo(second) + strInfo;
-        }
-
-        private static byte[] newByteArrayWithDateInfo(int second, byte[] data2) {
-            byte[] data1 = createDateInfo(second).getBytes();
-            byte[] retdata = new byte[data1.length + data2.length];
-            System.arraycopy(data1, 0, retdata, 0, data1.length);
-            System.arraycopy(data2, 0, retdata, data1.length, data2.length);
-            return retdata;
-        }
-
-        private static String clearDateInfo(String strInfo) {
-            if (strInfo != null && hasDateInfo(strInfo.getBytes())) {
-                strInfo = strInfo.substring(strInfo.indexOf(mSeparator) + 1,
-                        strInfo.length());
-            }
-            return strInfo;
-        }
-
-        private static byte[] clearDateInfo(byte[] data) {
-            if (hasDateInfo(data)) {
-                return copyOfRange(data, indexOf(data, mSeparator) + 1,
-                        data.length);
-            }
-            return data;
-        }
-
-        private static boolean hasDateInfo(byte[] data) {
-            return data != null && data.length > 15 && data[13] == '-'
-                    && indexOf(data, mSeparator) > 14;
-        }
-
-        private static String[] getDateInfoFromDate(byte[] data) {
-            if (hasDateInfo(data)) {
-                String saveDate = new String(copyOfRange(data, 0, 13));
-                String deleteAfter = new String(copyOfRange(data, 14,
-                        indexOf(data, mSeparator)));
-                return new String[] { saveDate, deleteAfter };
-            }
-            return null;
-        }
-
-        private static int indexOf(byte[] data, char c) {
-            for (int i = 0; i < data.length; i++) {
-                if (data[i] == c) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        private static byte[] copyOfRange(byte[] original, int from, int to) {
-            int newLength = to - from;
-            if (newLength < 0)
-                throw new IllegalArgumentException(from + " > " + to);
-            byte[] copy = new byte[newLength];
-            System.arraycopy(original, from, copy, 0,
-                    Math.min(original.length - from, newLength));
-            return copy;
-        }
-
-        private static final char mSeparator = ' ';
-
-        private static String createDateInfo(int second) {
-            String currentTime = System.currentTimeMillis() + "";
-            while (currentTime.length() < 13) {
-                currentTime = "0" + currentTime;
-            }
-            return currentTime + "-" + second + mSeparator;
-        }
-
-        /*
-         * Bitmap → byte[]
-         */
-        private static byte[] Bitmap2Bytes(Bitmap bm) {
-            if (bm == null) {
-                return null;
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bm.compress(Bitmap.CompressFormat.PNG, 100, baos);
-            return baos.toByteArray();
-        }
-
-        /*
-         * byte[] → Bitmap
-         */
-        private static Bitmap Bytes2Bimap(byte[] b) {
-            if (b.length == 0) {
-                return null;
-            }
-            return BitmapFactory.decodeByteArray(b, 0, b.length);
-        }
-
-        /*
-         * Drawable → Bitmap
-         */
-        private static Bitmap drawable2Bitmap(Drawable drawable) {
-            if (drawable == null) {
-                return null;
-            }
-            // 取 drawable 的长宽
-            int w = drawable.getIntrinsicWidth();
-            int h = drawable.getIntrinsicHeight();
-            // 取 drawable 的颜色格式
-            Bitmap.Config config = drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
-                    : Bitmap.Config.RGB_565;
-            // 建立对应 bitmap
-            Bitmap bitmap = Bitmap.createBitmap(w, h, config);
-            // 建立对应 bitmap 的画布
-            Canvas canvas = new Canvas(bitmap);
-            drawable.setBounds(0, 0, w, h);
-            // 把 drawable 内容画到画布中
-            drawable.draw(canvas);
-            return bitmap;
-        }
-
-        /*
-         * Bitmap → Drawable
-         */
-        @SuppressWarnings("deprecation")
-        private static Drawable bitmap2Drawable(Bitmap bm) {
-            if (bm == null) {
-                return null;
-            }
-            return new BitmapDrawable(bm);
         }
     }
 }
